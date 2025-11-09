@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset="utf-8" />
+    <title>METANIT.COM</title>
+<style>
+td {padding:5px;}
+button{margin: 5px;}
+</style>
 </head>
 <body>
     <h2>Список пользователей</h2>
@@ -27,123 +30,151 @@
         <tbody>
         </tbody>
     </table>
-
+  
     <script>
+    // Получение всех пользователей
         async function getUsers() {
+            // отправляет запрос и получаем ответ
             const response = await fetch("/api/users", {
                 method: "GET",
-                headers : {"Accept":"application/json"}
+                headers: { "Accept": "application/json" }
             });
+            // если запрос прошел нормально
             if (response.ok === true) {
+                // получаем данные
                 const users = await response.json();
                 const rows = document.querySelector("tbody");
+                // добавляем полученные элементы в таблицу
                 users.forEach(user => rows.append(row(user)));
             }
         }
-
-        // Получение одного пользователя! 
-
-        async function getUsers(id) {
-            const response = await fetch ('/api/users/${id}',{
-                method : "GET",
-                headers: {"Accept":"application/json"}
-            })
-            if (response.ok === true){
+        // Получение одного пользователя
+        async function getUser(id) {
+            const response = await fetch(`/api/users/${id}`, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
                 const user = await response.json();
                 document.getElementById("userId").value = user.id;
                 document.getElementById("userName").value = user.name;
                 document.getElementById("userAge").value = user.age;
             }
             else {
+                // если произошла ошибка, получаем сообщение об ошибке
                 const error = await response.json();
-                console.log(error.message);
+                console.log(error.message); // и выводим его на консоль
             }
         }
-        // Изменение паользователя! 
-
-        async function editUser(userID, userName, userAge) {
-            const response = await fetch("api/users",{
-                method: "PUT",
-                headers: {"Accept":"application/json", "Content_Type":"application/json" },
+        // Добавление пользователя
+        async function createUser(userName, userAge) {
+  
+            const response = await fetch("api/users", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    id : userID,
-                    name : userName, 
-                    age : parseInt(userAge, 10)
+                    name: userName,
+                    age: parseInt(userAge, 10)
                 })
             });
-            if (response.oj === true) {
+            if (response.ok === true) {
                 const user = await response.json();
-                document.querySelector(`tr[data-rowid='${user.id}']`)
-            }
-            else{
-                const error = await response.json();
-                console.log(error.message);
-            }
-        }
-        // Удаление пользователя!
-
-        async function deleteUser(id){ 
-            const response = await fetch(`/api/users/${user.id}`,{
-                method: "DELETE",
-                headers: {"Accept":"application/json"}
-            });
-            if (response.ok === true){
-                const user = await response.json();
-                document.querySelector(`tr[data-rowid='${user.id}']`)
+                document.querySelector("tbody").append(row(user));
             }
             else {
                 const error = await response.json();
                 console.log(error.message);
             }
         }
-
-        // Сброс данных формы полсе отправки
-
-        function reset(){
+        // Изменение пользователя
+        async function editUser(userId, userName, userAge) {
+            const response = await fetch("api/users", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: userId,
+                    name: userName,
+                    age: parseInt(userAge, 10)
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                document.querySelector(`tr[data-rowid='${user.id}']`).replaceWith(row(user));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // Удаление пользователя
+        async function deleteUser(id) {
+            const response = await fetch(`/api/users/${id}`, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                document.querySelector(`tr[data-rowid='${user.id}']`).remove();
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+  
+        // сброс данных формы после отправки
+        function reset() {
             document.getElementById("userId").value = 
             document.getElementById("userName").value = 
             document.getElementById("userAge").value = "";
         }
         // создание строки для таблицы
-        function row(user){
+        function row(user) {
+  
             const tr = document.createElement("tr");
             tr.setAttribute("data-rowid", user.id);
-
+  
             const nameTd = document.createElement("td");
             nameTd.append(user.name);
             tr.append(nameTd);
-
+  
             const ageTd = document.createElement("td");
-            ageTd.append(user.name);
+            ageTd.append(user.age);
             tr.append(ageTd);
-
+  
             const linksTd = document.createElement("td");
-
-            const editLink = document.createElement("button");
-            editLink.append("Изменить!");
-            editLink.addEventListener("click", async() => await getUsers(user.id));
-
+  
+            const editLink = document.createElement("button"); 
+            editLink.append("Изменить");
+            editLink.addEventListener("click", async() => await getUser(user.id));
+            linksTd.append(editLink);
+  
+            const removeLink = document.createElement("button"); 
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", async () => await deleteUser(user.id));
+  
             linksTd.append(removeLink);
             tr.appendChild(linksTd);
-
+  
             return tr;
-
         }
-
-        // Сброс значений формы!
-
-        document.getElementById("resetBtn").addEventListener("click", async()=>{
+        // сброс значений формы
+        document.getElementById("resetBtn").addEventListener("click", () =>  reset());
+  
+        // отправка формы
+        document.getElementById("saveBtn").addEventListener("click", async () => {
+             
             const id = document.getElementById("userId").value;
             const name = document.getElementById("userName").value;
             const age = document.getElementById("userAge").value;
             if (id === "")
                 await createUser(name, age);
-            else 
+            else
                 await editUser(id, name, age);
             reset();
         });
-
-        // Загрузка пользователя! 
+  
+        // загрузка пользователей
         getUsers();
     </script>
 </body>
